@@ -1,26 +1,38 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import './styles.css'
-import { NewTodoForm } from "./NewTodoForm"
+import { NewTodoForm } from './NewTodoForm'
+import { TodoList } from './TodoList'
 
 export default function App() {
-  const [todos, setTodos] = useState([])
+  const [todos, setTodos] = useState(() => {
+    const localValue = localStorage.getItem('ITEMS')
+
+    if (localValue == null) return [] // We don't have any value yet!
+
+    return JSON.parse(localValue)
+  })
+
+  // Anytime the todo's changed call the () => {} function
+  useEffect(() => {
+    localStorage.setItem('ITEMS', JSON.stringify(todos))
+  }, [todos])
 
   function addTodo(title) {
-    setTodos((currentTodos) => {
+    setTodos(currentTodos => {
       return [
         ...currentTodos,
         {
           id: crypto.randomUUID(),
           title,
-          completed: false,
+          completed: false
         },
       ]
     })
   }
 
   function toggleTodo(id, completed) {
-    setTodos((currentTodos) => {
-      return currentTodos.map((todo) => {
+    setTodos(currentTodos => {
+      return currentTodos.map(todo => {
         if (todo.id === id) {
           return { ...todo, completed } // Creating brand new todo - todo.completed = completed not working since this syntax is mutating the state (state is immutable)
         }
@@ -38,31 +50,9 @@ export default function App() {
 
   return (
     <>
-      <NewTodoForm onSubmit={addTodo} />      
+      <NewTodoForm onSubmit={addTodo} />
       <h1 className='header'>Todo List</h1>
-      <ul className='list'>
-        {todos.length === 0 && 'No Todos'}
-        {todos.map((todo) => {
-          return (
-            <li key={todo.id}>
-              <label>
-                <input
-                  type='checkbox'
-                  checked={todo.completed}
-                  onChange={(e) => toggleTodo(todo.id, e.target.checked)}
-                />
-                {todo.title}
-              </label>
-              <button
-                className='btn btn-danger'
-                onClick={() => deleteTodo(todo.id)} // Need to use '() =>' to pass the function at the time of click, not the result of the already executed function
-              >
-                Delete
-              </button>
-            </li>
-          )
-        })}
-      </ul>
+      <TodoList todos={todos} toggleTodo={toggleTodo} deleteTodo={deleteTodo} />
     </>
   )
 }
